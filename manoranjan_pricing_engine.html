@@ -1,0 +1,432 @@
+
+<h2 class="sr-only">Manoranjan Stall pricing decision engine — enter COGS, guests, and selling price to see margins and profit zones.</h2>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.eng{padding:1rem 0;font-family:var(--font-sans)}
+.tabs{display:flex;gap:8px;margin-bottom:1.5rem;border-bottom:0.5px solid var(--color-border-tertiary);padding-bottom:0}
+.tab{padding:8px 16px;font-size:13px;cursor:pointer;border:0.5px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;color:var(--color-text-secondary);background:transparent;margin-bottom:-0.5px}
+.tab.active{background:var(--color-background-primary);border-color:var(--color-border-tertiary);color:var(--color-text-primary);font-weight:500}
+.panel{display:none}.panel.active{display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem}
+.mcard{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem;text-align:center}
+.mlabel{font-size:12px;color:var(--color-text-secondary);margin-bottom:6px}
+.mval{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.msub{font-size:12px;color:var(--color-text-tertiary);margin-top:2px}
+.sec-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;margin-top:1.5rem}
+.sec-title:first-child{margin-top:0}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:13px;color:var(--color-text-secondary)}
+.field input{width:100%;padding:7px 10px;font-size:14px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary)}
+.field input:focus{outline:none;border-color:var(--color-border-primary)}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500}
+.badge-loss{background:#FCEBEB;color:#A32D2D}
+.badge-risky{background:#FAEEDA;color:#854F0B}
+.badge-healthy{background:#EAF3DE;color:#3B6D11}
+.badge-excellent{background:#E1F5EE;color:#0F6E56}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot-loss{background:#E24B4A}
+.dot-risky{background:#EF9F27}
+.dot-healthy{background:#639922}
+.dot-excellent{background:#1D9E75}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:14px}
+.result-row:last-child{border-bottom:none}
+.result-label{color:var(--color-text-secondary)}
+.result-val{font-weight:500;color:var(--color-text-primary)}
+.mode-select{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.mode-btn{padding:6px 12px;font-size:12px;border:0.5px solid var(--color-border-secondary);border-radius:20px;cursor:pointer;background:transparent;color:var(--color-text-secondary)}
+.mode-btn.active{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-primary);font-weight:500}
+.scen-table{width:100%;border-collapse:collapse;font-size:13px}
+.scen-table th{text-align:left;font-weight:500;color:var(--color-text-secondary);padding:8px 10px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.scen-table td{padding:8px 10px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+.scen-table tr:last-child td{border-bottom:none}
+.divider{height:0.5px;background:var(--color-border-tertiary);margin:1.5rem 0}
+.hint{font-size:12px;color:var(--color-text-tertiary);margin-top:4px}
+.cogs-breakdown{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px;margin-bottom:1rem}
+.cogs-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--color-text-secondary)}
+.cogs-total{display:flex;justify-content:space-between;font-size:14px;font-weight:500;padding-top:8px;margin-top:6px;border-top:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+.comp-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1rem}
+.comp-card{border-radius:var(--border-radius-md);padding:1rem;border:0.5px solid var(--color-border-tertiary)}
+.comp-title{font-size:13px;font-weight:500;margin-bottom:12px;color:var(--color-text-primary)}
+</style>
+
+<div class="eng">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('input')">Input panel</button>
+    <button class="tab" onclick="switchTab('basic')">Basic station</button>
+    <button class="tab" onclick="switchTab('premium')">Premium station</button>
+    <button class="tab" onclick="switchTab('dashboard')">Summary dashboard</button>
+  </div>
+
+  <div id="tab-input" class="panel active">
+    <div class="grid2" style="gap:1.5rem;align-items:start">
+      <div>
+        <div class="sec-title">Event parameters</div>
+        <div class="card" style="display:flex;flex-direction:column;gap:12px">
+          <div class="field"><label>Number of guests</label><input type="number" id="guests" value="100" oninput="calc()"></div>
+        </div>
+
+        <div class="sec-title">Fixed event costs (₹)</div>
+        <div class="card" style="display:flex;flex-direction:column;gap:12px">
+          <div class="field"><label>Staff cost</label><input type="number" id="staff" value="3000" oninput="calc()"></div>
+          <div class="field"><label>Transport cost</label><input type="number" id="transport" value="1500" oninput="calc()"></div>
+          <div class="field"><label>Setup materials</label><input type="number" id="setup" value="500" oninput="calc()"></div>
+          <div class="field"><label>Miscellaneous</label><input type="number" id="misc" value="500" oninput="calc()"></div>
+          <div class="field"><label>Your time (opportunity cost)</label><input type="number" id="time_cost" value="1000" oninput="calc()"></div>
+          <div class="cogs-total"><span>Total fixed cost</span><span id="total-fixed">₹6,500</span></div>
+        </div>
+
+        <div class="sec-title">Target margins</div>
+        <div class="card" style="display:flex;flex-direction:column;gap:12px">
+          <div class="field"><label>Target gross margin (%)</label><input type="number" id="tgt-gross" value="65" oninput="calc()"></div>
+          <div class="field"><label>Target net margin (%)</label><input type="number" id="tgt-net" value="35" oninput="calc()"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="sec-title">Basic station — COGS builder</div>
+        <div class="card">
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px">
+            <div class="field"><label>Bangles (₹/guest)</label><input type="number" id="b-bangles" value="40" oninput="calc()"></div>
+            <div class="field"><label>Earrings (₹/guest)</label><input type="number" id="b-earrings" value="14" oninput="calc()"></div>
+            <div class="field"><label>Bindi (₹/guest)</label><input type="number" id="b-bindi" value="4" oninput="calc()"></div>
+            <div class="field"><label>Potli (₹/guest)</label><input type="number" id="b-potli" value="45" oninput="calc()"></div>
+          </div>
+          <div class="cogs-breakdown">
+            <div class="cogs-row"><span>Bangles</span><span id="cb-bangles">₹40</span></div>
+            <div class="cogs-row"><span>Earrings</span><span id="cb-earrings">₹14</span></div>
+            <div class="cogs-row"><span>Bindi</span><span id="cb-bindi">₹4</span></div>
+            <div class="cogs-row"><span>Potli</span><span id="cb-potli">₹45</span></div>
+            <div class="cogs-total"><span>Total COGS/guest</span><span id="cb-total">₹103</span></div>
+          </div>
+        </div>
+
+        <div class="sec-title">Premium station — COGS builder</div>
+        <div class="card">
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px">
+            <div class="field"><label>Bangles (₹/guest)</label><input type="number" id="p-bangles" value="135" oninput="calc()"></div>
+            <div class="field"><label>Earrings (₹/guest)</label><input type="number" id="p-earrings" value="70" oninput="calc()"></div>
+            <div class="field"><label>Bindi (₹/guest)</label><input type="number" id="p-bindi" value="4" oninput="calc()"></div>
+            <div class="field"><label>Potli (₹/guest)</label><input type="number" id="p-potli" value="65" oninput="calc()"></div>
+          </div>
+          <div class="cogs-breakdown">
+            <div class="cogs-row"><span>Bangles</span><span id="cp-bangles">₹135</span></div>
+            <div class="cogs-row"><span>Earrings</span><span id="cp-earrings">₹70</span></div>
+            <div class="cogs-row"><span>Bindi</span><span id="cp-bindi">₹4</span></div>
+            <div class="cogs-row"><span>Potli</span><span id="cp-potli">₹65</span></div>
+            <div class="cogs-total"><span>Total COGS/guest</span><span id="cp-total">₹274</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-basic" class="panel">
+    <div class="sec-title">Pricing mode</div>
+    <div class="mode-select">
+      <button class="mode-btn active" id="bm1" onclick="setMode('basic',1)">Mode 1 — find sell price from COGS</button>
+      <button class="mode-btn" id="bm2" onclick="setMode('basic',2)">Mode 2 — enter sell price, see margins</button>
+      <button class="mode-btn" id="bm3" onclick="setMode('basic',3)">Mode 3 — find sell price from target net margin</button>
+    </div>
+
+    <div class="grid2" style="gap:1.5rem;align-items:start">
+      <div>
+        <div class="card">
+          <div id="b-mode1-input">
+            <div class="field"><label>COGS/guest (auto from input panel)</label><input type="number" id="b-cogs-display" oninput="calc()" placeholder="Auto-filled"></div>
+            <p class="hint" style="margin-top:8px">Sell price = COGS ÷ (1 − target gross margin%)</p>
+          </div>
+          <div id="b-mode2-input" style="display:none">
+            <div class="field"><label>Selling price per guest (₹)</label><input type="number" id="b-sell-m2" value="300" oninput="calc()"></div>
+          </div>
+          <div id="b-mode3-input" style="display:none">
+            <div class="field"><label>COGS/guest (auto from input panel)</label><input type="number" id="b-cogs-display3" oninput="calc()" placeholder="Auto-filled"></div>
+            <p class="hint" style="margin-top:8px">Sell price = Total cost/guest ÷ (1 − target net margin%)</p>
+          </div>
+        </div>
+
+        <div class="sec-title">Results</div>
+        <div class="card">
+          <div class="result-row"><span class="result-label">COGS per guest</span><span class="result-val" id="b-res-cogs">₹103</span></div>
+          <div class="result-row"><span class="result-label">Fixed cost per guest</span><span class="result-val" id="b-res-fixed">₹65</span></div>
+          <div class="result-row"><span class="result-label">Total cost per guest</span><span class="result-val" id="b-res-total-cost">₹168</span></div>
+          <div class="result-row"><span class="result-label">Recommended sell price</span><span class="result-val" id="b-res-sell">₹295</span></div>
+          <div class="result-row"><span class="result-label">Revenue (total event)</span><span class="result-val" id="b-res-rev">₹29,500</span></div>
+          <div class="result-row"><span class="result-label">Total profit (₹)</span><span class="result-val" id="b-res-profit">₹12,700</span></div>
+          <div class="result-row"><span class="result-label">Profit per guest</span><span class="result-val" id="b-res-profit-guest">₹127</span></div>
+          <div class="result-row"><span class="result-label">Gross margin</span><span class="result-val" id="b-res-gm">65%</span></div>
+          <div class="result-row"><span class="result-label">Net margin</span><span class="result-val" id="b-res-nm">43%</span></div>
+          <div class="result-row"><span class="result-label">Break-even guests</span><span class="result-val" id="b-res-be">33</span></div>
+          <div class="result-row" style="border-bottom:none"><span class="result-label">Decision</span><span id="b-badge"></span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="sec-title">Scenario simulation</div>
+        <div class="card" style="padding:0.75rem">
+          <table class="scen-table">
+            <thead><tr><th>Sell price</th><th>Gross %</th><th>Net %</th><th>Profit/guest</th><th>Zone</th></tr></thead>
+            <tbody id="b-scen-body"></tbody>
+          </table>
+        </div>
+        <p class="hint" style="margin-top:8px;padding:0 4px">Scenario prices are sell price ±20% in 4 steps. Update by changing inputs.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-premium" class="panel">
+    <div class="sec-title">Pricing mode</div>
+    <div class="mode-select">
+      <button class="mode-btn active" id="pm1" onclick="setMode('premium',1)">Mode 1 — find sell price from COGS</button>
+      <button class="mode-btn" id="pm2" onclick="setMode('premium',2)">Mode 2 — enter sell price, see margins</button>
+      <button class="mode-btn" id="pm3" onclick="setMode('premium',3)">Mode 3 — find sell price from target net margin</button>
+    </div>
+
+    <div class="grid2" style="gap:1.5rem;align-items:start">
+      <div>
+        <div class="card">
+          <div id="p-mode1-input">
+            <div class="field"><label>COGS/guest (auto from input panel)</label><input type="number" id="p-cogs-display" oninput="calc()" placeholder="Auto-filled"></div>
+            <p class="hint" style="margin-top:8px">Sell price = COGS ÷ (1 − target gross margin%)</p>
+          </div>
+          <div id="p-mode2-input" style="display:none">
+            <div class="field"><label>Selling price per guest (₹)</label><input type="number" id="p-sell-m2" value="600" oninput="calc()"></div>
+          </div>
+          <div id="p-mode3-input" style="display:none">
+            <div class="field"><label>COGS/guest (auto from input panel)</label><input type="number" id="p-cogs-display3" oninput="calc()" placeholder="Auto-filled"></div>
+            <p class="hint" style="margin-top:8px">Sell price = Total cost/guest ÷ (1 − target net margin%)</p>
+          </div>
+        </div>
+
+        <div class="sec-title">Results</div>
+        <div class="card">
+          <div class="result-row"><span class="result-label">COGS per guest</span><span class="result-val" id="p-res-cogs">₹274</span></div>
+          <div class="result-row"><span class="result-label">Fixed cost per guest</span><span class="result-val" id="p-res-fixed">₹65</span></div>
+          <div class="result-row"><span class="result-label">Total cost per guest</span><span class="result-val" id="p-res-total-cost">₹339</span></div>
+          <div class="result-row"><span class="result-label">Recommended sell price</span><span class="result-val" id="p-res-sell">₹783</span></div>
+          <div class="result-row"><span class="result-label">Revenue (total event)</span><span class="result-val" id="p-res-rev">₹78,300</span></div>
+          <div class="result-row"><span class="result-label">Total profit (₹)</span><span class="result-val" id="p-res-profit">₹44,400</span></div>
+          <div class="result-row"><span class="result-label">Profit per guest</span><span class="result-val" id="p-res-profit-guest">₹444</span></div>
+          <div class="result-row"><span class="result-label">Gross margin</span><span class="result-val" id="p-res-gm">65%</span></div>
+          <div class="result-row"><span class="result-label">Net margin</span><span class="result-val" id="p-res-nm">57%</span></div>
+          <div class="result-row"><span class="result-label">Break-even guests</span><span class="result-val" id="p-res-be">21</span></div>
+          <div class="result-row" style="border-bottom:none"><span class="result-label">Decision</span><span id="p-badge"></span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="sec-title">Scenario simulation</div>
+        <div class="card" style="padding:0.75rem">
+          <table class="scen-table">
+            <thead><tr><th>Sell price</th><th>Gross %</th><th>Net %</th><th>Profit/guest</th><th>Zone</th></tr></thead>
+            <tbody id="p-scen-body"></tbody>
+          </table>
+        </div>
+        <p class="hint" style="margin-top:8px;padding:0 4px">Scenario prices are sell price ±20% in 4 steps. Update by changing inputs.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-dashboard" class="panel">
+    <div class="sec-title">Basic station</div>
+    <div class="grid4">
+      <div class="mcard"><div class="mlabel">Revenue</div><div class="mval" id="d-b-rev">—</div></div>
+      <div class="mcard"><div class="mlabel">Total profit</div><div class="mval" id="d-b-profit">—</div></div>
+      <div class="mcard"><div class="mlabel">Gross margin</div><div class="mval" id="d-b-gm">—</div></div>
+      <div class="mcard"><div class="mlabel">Net margin</div><div class="mval" id="d-b-nm">—</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+      <span style="font-size:13px;color:var(--color-text-secondary)">Break-even:</span>
+      <span style="font-size:14px;font-weight:500" id="d-b-be">—</span>
+      <span style="font-size:13px;color:var(--color-text-secondary);margin-left:12px">Decision:</span>
+      <span id="d-b-badge"></span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="sec-title">Premium station</div>
+    <div class="grid4">
+      <div class="mcard"><div class="mlabel">Revenue</div><div class="mval" id="d-p-rev">—</div></div>
+      <div class="mcard"><div class="mlabel">Total profit</div><div class="mval" id="d-p-profit">—</div></div>
+      <div class="mcard"><div class="mlabel">Gross margin</div><div class="mval" id="d-p-gm">—</div></div>
+      <div class="mcard"><div class="mlabel">Net margin</div><div class="mval" id="d-p-nm">—</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+      <span style="font-size:13px;color:var(--color-text-secondary)">Break-even:</span>
+      <span style="font-size:14px;font-weight:500" id="d-p-be">—</span>
+      <span style="font-size:13px;color:var(--color-text-secondary);margin-left:12px">Decision:</span>
+      <span id="d-p-badge"></span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="sec-title">Basic vs premium comparison</div>
+    <div class="comp-row">
+      <div class="comp-card">
+        <div class="comp-title">Basic station</div>
+        <div class="result-row"><span class="result-label">Sell price/guest</span><span class="result-val" id="d-b-sell">—</span></div>
+        <div class="result-row"><span class="result-label">COGS/guest</span><span class="result-val" id="d-b-cogs">—</span></div>
+        <div class="result-row"><span class="result-label">Profit/guest</span><span class="result-val" id="d-b-ppg">—</span></div>
+        <div class="result-row" style="border-bottom:none"><span class="result-label">Break-even</span><span class="result-val" id="d-b-be2">—</span></div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-title">Premium station</div>
+        <div class="result-row"><span class="result-label">Sell price/guest</span><span class="result-val" id="d-p-sell">—</span></div>
+        <div class="result-row"><span class="result-label">COGS/guest</span><span class="result-val" id="d-p-cogs">—</span></div>
+        <div class="result-row"><span class="result-label">Profit/guest</span><span class="result-val" id="d-p-ppg">—</span></div>
+        <div class="result-row" style="border-bottom:none"><span class="result-label">Break-even</span><span class="result-val" id="d-p-be2">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let bMode=1, pMode=1;
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>{
+    const names=['input','basic','premium','dashboard'];
+    el.classList.toggle('active', names[i]===t);
+  });
+  document.querySelectorAll('.panel').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+}
+
+function setMode(station, m){
+  if(station==='basic'){
+    bMode=m;
+    [1,2,3].forEach(i=>{
+      document.getElementById('bm'+i).classList.toggle('active',i===m);
+      document.getElementById('b-mode'+i+'-input').style.display=i===m?'block':'none';
+    });
+  } else {
+    pMode=m;
+    [1,2,3].forEach(i=>{
+      document.getElementById('pm'+i).classList.toggle('active',i===m);
+      document.getElementById('p-mode'+i+'-input').style.display=i===m?'block':'none';
+    });
+  }
+  calc();
+}
+
+function v(id){return parseFloat(document.getElementById(id).value)||0;}
+
+function badge(nm){
+  if(nm<0) return '<span class="badge badge-loss"><span class="dot dot-loss"></span>Loss</span>';
+  if(nm<25) return '<span class="badge badge-risky"><span class="dot dot-risky"></span>Low / risky</span>';
+  if(nm<45) return '<span class="badge badge-healthy"><span class="dot dot-healthy"></span>Healthy</span>';
+  return '<span class="badge badge-excellent"><span class="dot dot-excellent"></span>Excellent</span>';
+}
+
+function fmt(n){return '₹'+Math.round(n).toLocaleString('en-IN');}
+function fmtp(n){return Math.round(n)+'%';}
+
+function scenRows(cogs, fixedPerGuest, tgtGross, tgtNet, basePrice, totalFixed, bodyId){
+  const steps=[-0.2,-0.07,0,0.1,0.2,0.35];
+  const prices=steps.map(s=>Math.round(basePrice*(1+s)/10)*10).filter((p,i,a)=>a.indexOf(p)===i);
+  let html='';
+  prices.forEach(price=>{
+    const gm=price>0?((price-cogs)/price)*100:0;
+    const profitG=price-cogs-fixedPerGuest;
+    const nm=price>0?(profitG/price)*100:0;
+    const b=badge(nm);
+    html+=`<tr><td>${fmt(price)}</td><td>${fmtp(gm)}</td><td>${fmtp(nm)}</td><td>${fmt(profitG)}</td><td>${b}</td></tr>`;
+  });
+  document.getElementById(bodyId).innerHTML=html;
+}
+
+function calc(){
+  const guests=v('guests');
+  const staff=v('staff'), transport=v('transport'), setup=v('setup'), misc=v('misc'), timec=v('time_cost');
+  const totalFixed=staff+transport+setup+misc+timec;
+  const fixedPerGuest=guests>0?totalFixed/guests:0;
+  const tgtGross=v('tgt-gross')/100;
+  const tgtNet=v('tgt-net')/100;
+
+  document.getElementById('total-fixed').textContent=fmt(totalFixed);
+
+  const bBangles=v('b-bangles'), bEarrings=v('b-earrings'), bBindi=v('b-bindi'), bPotli=v('b-potli');
+  const bCogs=bBangles+bEarrings+bBindi+bPotli;
+  document.getElementById('cb-bangles').textContent=fmt(bBangles);
+  document.getElementById('cb-earrings').textContent=fmt(bEarrings);
+  document.getElementById('cb-bindi').textContent=fmt(bBindi);
+  document.getElementById('cb-potli').textContent=fmt(bPotli);
+  document.getElementById('cb-total').textContent=fmt(bCogs);
+
+  const pBangles=v('p-bangles'), pEarrings=v('p-earrings'), pBindi=v('p-bindi'), pPotli=v('p-potli');
+  const pCogs=pBangles+pEarrings+pBindi+pPotli;
+  document.getElementById('cp-bangles').textContent=fmt(pBangles);
+  document.getElementById('cp-earrings').textContent=fmt(pEarrings);
+  document.getElementById('cp-bindi').textContent=fmt(pBindi);
+  document.getElementById('cp-potli').textContent=fmt(pPotli);
+  document.getElementById('cp-total').textContent=fmt(pCogs);
+
+  function calcStation(cogs, mode, sellM2Id, displayId, displayId3, prefix){
+    let sellPrice=0;
+    const totalCostG=cogs+fixedPerGuest;
+    if(mode===1){
+      sellPrice=tgtGross<1&&tgtGross>0?cogs/(1-tgtGross):cogs*3;
+      if(document.getElementById(displayId)) document.getElementById(displayId).value=cogs.toFixed(2);
+    } else if(mode===2){
+      sellPrice=v(sellM2Id);
+    } else {
+      sellPrice=tgtNet<1&&tgtNet>0?totalCostG/(1-tgtNet):totalCostG*2;
+      if(document.getElementById(displayId3)) document.getElementById(displayId3).value=cogs.toFixed(2);
+    }
+
+    const gm=sellPrice>0?((sellPrice-cogs)/sellPrice)*100:0;
+    const profitG=sellPrice-totalCostG;
+    const nm=sellPrice>0?(profitG/sellPrice)*100:0;
+    const revenue=sellPrice*guests;
+    const totalProfit=profitG*guests;
+    const contribG=sellPrice-cogs;
+    const be=contribG>0?Math.ceil(totalFixed/contribG):999;
+
+    document.getElementById(prefix+'res-cogs').textContent=fmt(cogs);
+    document.getElementById(prefix+'res-fixed').textContent=fmt(fixedPerGuest);
+    document.getElementById(prefix+'res-total-cost').textContent=fmt(totalCostG);
+    document.getElementById(prefix+'res-sell').textContent=fmt(sellPrice);
+    document.getElementById(prefix+'res-rev').textContent=fmt(revenue);
+    document.getElementById(prefix+'res-profit').textContent=fmt(totalProfit);
+    document.getElementById(prefix+'res-profit-guest').textContent=fmt(profitG);
+    document.getElementById(prefix+'res-gm').textContent=fmtp(gm);
+    document.getElementById(prefix+'res-nm').textContent=fmtp(nm);
+    document.getElementById(prefix+'res-be').textContent=be+' guests';
+    document.getElementById(prefix+'badge').innerHTML=badge(nm);
+
+    scenRows(cogs, fixedPerGuest, tgtGross, tgtNet, sellPrice, totalFixed, prefix+'scen-body');
+
+    return {sellPrice, cogs, gm, nm, revenue, totalProfit, profitG, be};
+  }
+
+  const bRes=calcStation(bCogs, bMode, 'b-sell-m2', 'b-cogs-display', 'b-cogs-display3', 'b-res-');
+  const pRes=calcStation(pCogs, pMode, 'p-sell-m2', 'p-cogs-display', 'p-cogs-display3', 'p-res-');
+
+  document.getElementById('d-b-rev').textContent=fmt(bRes.revenue);
+  document.getElementById('d-b-profit').textContent=fmt(bRes.totalProfit);
+  document.getElementById('d-b-gm').textContent=fmtp(bRes.gm);
+  document.getElementById('d-b-nm').textContent=fmtp(bRes.nm);
+  document.getElementById('d-b-be').textContent=bRes.be+' guests';
+  document.getElementById('d-b-badge').innerHTML=badge(bRes.nm);
+  document.getElementById('d-b-sell').textContent=fmt(bRes.sellPrice);
+  document.getElementById('d-b-cogs').textContent=fmt(bRes.cogs);
+  document.getElementById('d-b-ppg').textContent=fmt(bRes.profitG);
+  document.getElementById('d-b-be2').textContent=bRes.be+' guests';
+
+  document.getElementById('d-p-rev').textContent=fmt(pRes.revenue);
+  document.getElementById('d-p-profit').textContent=fmt(pRes.totalProfit);
+  document.getElementById('d-p-gm').textContent=fmtp(pRes.gm);
+  document.getElementById('d-p-nm').textContent=fmtp(pRes.nm);
+  document.getElementById('d-p-be').textContent=pRes.be+' guests';
+  document.getElementById('d-p-badge').innerHTML=badge(pRes.nm);
+  document.getElementById('d-p-sell').textContent=fmt(pRes.sellPrice);
+  document.getElementById('d-p-cogs').textContent=fmt(pRes.cogs);
+  document.getElementById('d-p-ppg').textContent=fmt(pRes.profitG);
+  document.getElementById('d-p-be2').textContent=pRes.be+' guests';
+}
+
+calc();
+</script>
